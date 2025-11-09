@@ -14,3 +14,11 @@ export interface FormData {
   email: string;
   Model: string;
 }
+
+export interface HistoryItem {
+  id: string;
+  prompt: string;
+  imageUrl: string; // Stored as a base64 data URL
+  model: string;
+  timestamp: number;
+}

@@ -53,8 +53,6 @@ export const AuthPage: React.FC = () => {
                 if (error) {
                     setAuthError(error.message);
                 } else if (data.user) {
-                    // This handles both new signups and re-signups for unconfirmed users.
-                    // Supabase automatically sends/resends the verification email.
                     setShowVerificationMessage(true);
                 }
             } else {
@@ -62,7 +60,6 @@ export const AuthPage: React.FC = () => {
                 if (error) {
                     setAuthError(error.message);
                 }
-                // onAuthStateChange in App.tsx will handle redirect
             }
         } catch (err) {
             setAuthError("An unexpected error occurred. Please try again.");
@@ -134,23 +131,19 @@ export const AuthPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    {/* Left Side: Auth Form / Verification Message */}
                     {showVerificationMessage ? <VerificationMessage /> : <AuthForm />}
 
-                    {/* Right Side: Plans & Credits */}
                     <div className="space-y-6">
                          <h3 className="text-2xl font-bold text-center text-white md:text-left">Plans & Credits</h3>
-                         {/* Free Plan */}
                          <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700 flex items-center space-x-4">
                             <div className="flex-shrink-0 bg-gray-700 p-3 rounded-full">
                                 <LockIcon className="w-6 h-6 text-gray-400" />
                             </div>
                             <div>
                                 <h4 className="font-bold text-lg text-white">Free Plan</h4>
-                                <p className="text-gray-400"><span className="font-semibold text-white">10,000 free credits</span> on sign-up</p>
+                                <p className="text-gray-400"><span className="font-semibold text-white">10 free credits</span> on sign-up</p>
                             </div>
                          </div>
-                         {/* Pro Plan */}
                          <div className="relative bg-gray-800 p-6 rounded-lg border border-indigo-500/50 ring-1 ring-indigo-500/50">
                             <div className="absolute top-0 right-0 -mt-3 mr-3">
                                <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-indigo-500 text-white">
@@ -166,7 +159,10 @@ export const AuthPage: React.FC = () => {
                                     <p className="text-gray-300">Unlimited generations for <span className="font-bold text-white">Rs 199 lifetime</span></p>
                                 </div>
                             </div>
-                            <button className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                            <button 
+                              onClick={() => window.open('https://buy.stripe.com/test_7sI5m4b1a7C4dC8cMN', '_blank')}
+                              className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                            >
                                 Go Pro
                             </button>
                          </div>

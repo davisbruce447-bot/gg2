@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { StableHordeModel, FormData } from '../types';
 import { IMAGE_GENERATION_COST } from '../constants';
 
@@ -10,6 +10,8 @@ interface ImageFormProps {
   isLoadingCredits: boolean;
   credits: number | null;
   userEmail: string | undefined;
+  reusedPrompt: string | null;
+  reusedModel: string | null;
 }
 
 export const ImageForm: React.FC<ImageFormProps> = ({
@@ -20,9 +22,24 @@ export const ImageForm: React.FC<ImageFormProps> = ({
   isLoadingCredits,
   credits,
   userEmail,
+  reusedPrompt,
+  reusedModel,
 }) => {
   const [prompt, setPrompt] = useState('A beautiful watercolor painting of a majestic fox in a vibrant autumn forest');
   const [selectedModel, setSelectedModel] = useState('Deliberate');
+
+  useEffect(() => {
+    if (reusedPrompt) {
+      setPrompt(reusedPrompt);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [reusedPrompt]);
+
+  useEffect(() => {
+    if (reusedModel) {
+      setSelectedModel(reusedModel);
+    }
+  }, [reusedModel]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

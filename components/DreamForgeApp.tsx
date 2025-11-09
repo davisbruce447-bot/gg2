@@ -6,7 +6,8 @@ import { ErrorMessage } from './ErrorMessage';
 import { fetchModels, generateImage } from '../services/n8nWorkflowService';
 import { supabase } from '../services/supabaseClient';
 import { IMAGE_GENERATION_COST } from '../constants';
-import type { StableHordeModel, FormData } from '../types';
+import { HistoryPanel } from './HistoryPanel';
+import type { StableHordeModel, FormData, HistoryItem } from '../types';
 import type { Session } from '@supabase/supabase-js';
 
 interface DreamForgeAppProps {
@@ -23,7 +24,23 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
   
   const [credits, setCredits] = useState<number | null>(null);
   const [isLoadingCredits, setIsLoadingCredits] = useState<boolean>(true);
+  
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [reusedPrompt, setReusedPrompt] = useState<string | null>(null);
+  const [reusedModel, setReusedModel] = useState<string | null>(null);
 
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem('dreamforge-history');
+      if (savedHistory) {
+        setHistory(JSON.parse(savedHistory));
+      }
+    } catch (err) {
+      console.error("Failed to load or parse history from localStorage", err);
+      // If parsing fails, clear the corrupted data
+      localStorage.removeItem('dreamforge-history');
+    }
+  }, []);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -48,28 +65,48 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
   useEffect(() => {
     const fetchUserCredits = async () => {
       if (!session.user) return;
+      
       setIsLoadingCredits(true);
       setError(null);
-      try {
-        const { data, error: fetchError } = await supabase
-          .from('profiles')
-          .select('credits')
-          .eq('id', session.user.id)
-          .single();
 
-        if (fetchError) {
-          console.error('Error fetching credits:', fetchError);
-          setError("Could not load your credit balance. This can happen on first sign-in. Please refresh the page in a moment.");
+      let attempts = 0;
+      const maxAttempts = 4; // Try up to 4 times (initial + 3 retries)
+      const delay = 1500; // 1.5 seconds delay
+
+      while (attempts < maxAttempts) {
+        try {
+          const { data, error: fetchError } = await supabase
+            .from('profiles')
+            .select('credits')
+            .eq('id', session.user.id)
+            .single();
+
+          if (data) {
+            setCredits(data.credits);
+            setIsLoadingCredits(false);
+            return; 
+          }
+
+          if (fetchError && fetchError.code === 'PGRST116') {
+            attempts++;
+            if (attempts < maxAttempts) {
+              console.warn(`Profile not found, retrying in ${delay}ms... (Attempt ${attempts}/${maxAttempts})`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+              throw new Error("Profile not found after multiple attempts.");
+            }
+          } else if (fetchError) {
+             throw fetchError;
+          } else {
+            throw new Error("Unexpected response from database when fetching credits.");
+          }
+        } catch (err: any) {
+          console.error('Final error fetching credits:', err);
+          setError("Could not load your credit balance. Please refresh the page and try again.");
           setCredits(0);
-        } else if (data) {
-          setCredits(data.credits);
+          setIsLoadingCredits(false);
+          return;
         }
-      } catch (err) {
-        setError("An unexpected error occurred while fetching your credits.");
-        console.error(err);
-        setCredits(0);
-      } finally {
-        setIsLoadingCredits(false);
       }
     };
 
@@ -98,8 +135,30 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
         email: session.user.email || '',
       };
       const imageBlob = await generateImage(fullFormData);
+      
+      // Create a temporary URL for immediate display
       const imageUrl = URL.createObjectURL(imageBlob);
       setGeneratedImage(imageUrl);
+
+      // Convert to base64 to store in history for persistence
+      const reader = new FileReader();
+      reader.readAsDataURL(imageBlob);
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
+        const newHistoryItem: HistoryItem = {
+          id: `${Date.now()}-${formData.Prompt.slice(0, 10)}`,
+          prompt: formData.Prompt,
+          imageUrl: base64data,
+          model: formData.Model,
+          timestamp: Date.now(),
+        };
+
+        setHistory(prevHistory => {
+          const updatedHistory = [newHistoryItem, ...prevHistory].slice(0, 20); // Limit to 20 items
+          localStorage.setItem('dreamforge-history', JSON.stringify(updatedHistory));
+          return updatedHistory;
+        });
+      };
 
       const newCredits = credits - IMAGE_GENERATION_COST;
       const { error: updateError } = await supabase
@@ -122,6 +181,11 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
     }
   }, [credits, session.user.id, session.user.email]);
   
+  const handleReusePrompt = useCallback((prompt: string, model: string) => {
+    setReusedPrompt(prompt);
+    setReusedModel(model);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">
       <Header credits={credits ?? 0} />
@@ -147,6 +211,8 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
               isLoadingCredits={isLoadingCredits}
               credits={credits}
               userEmail={session.user.email}
+              reusedPrompt={reusedPrompt}
+              reusedModel={reusedModel}
             />
           </div>
           <ImageDisplay
@@ -155,6 +221,7 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
             generationTime={generationTime}
           />
         </div>
+        <HistoryPanel history={history} onReusePrompt={handleReusePrompt} />
       </main>
     </div>
   );
