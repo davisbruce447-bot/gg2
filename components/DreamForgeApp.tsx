@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './Header';
 import { ImageForm } from './ImageForm';
 import { ImageDisplay } from './ImageDisplay';
 import { ErrorMessage } from './ErrorMessage';
 import { fetchModels, generateImage } from '../services/n8nWorkflowService';
+import { supabase } from '../services/supabaseClient';
+import { IMAGE_GENERATION_COST } from '../constants';
 import type { StableHordeModel, FormData } from '../types';
 import type { Session } from '@supabase/supabase-js';
 
@@ -19,7 +20,9 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [generationTime, setGenerationTime] = useState<number>(0);
-  const [credits, setCredits] = useState<number>(10);
+  
+  const [credits, setCredits] = useState<number | null>(null);
+  const [isLoadingCredits, setIsLoadingCredits] = useState<boolean>(true);
 
 
   useEffect(() => {
@@ -42,9 +45,40 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
     loadModels();
   }, []);
 
+  useEffect(() => {
+    const fetchUserCredits = async () => {
+      if (!session.user) return;
+      setIsLoadingCredits(true);
+      setError(null);
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('profiles')
+          .select('credits')
+          .eq('id', session.user.id)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching credits:', fetchError);
+          setError("Could not load your credit balance. This can happen on first sign-in. Please refresh the page in a moment.");
+          setCredits(0);
+        } else if (data) {
+          setCredits(data.credits);
+        }
+      } catch (err) {
+        setError("An unexpected error occurred while fetching your credits.");
+        console.error(err);
+        setCredits(0);
+      } finally {
+        setIsLoadingCredits(false);
+      }
+    };
+
+    fetchUserCredits();
+  }, [session.user]);
+
   const handleGenerate = useCallback(async (formData: Omit<FormData, 'email'>) => {
-    if (credits <= 0) {
-      setError("You have no credits left for today. Please upgrade to Pro for unlimited generations.");
+    if (credits === null || credits < IMAGE_GENERATION_COST) {
+      setError("You do not have enough credits to generate an image.");
       return;
     }
     
@@ -66,7 +100,19 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
       const imageBlob = await generateImage(fullFormData);
       const imageUrl = URL.createObjectURL(imageBlob);
       setGeneratedImage(imageUrl);
-      setCredits(prev => prev - 1); // Decrement credits on success
+
+      const newCredits = credits - IMAGE_GENERATION_COST;
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ credits: newCredits })
+        .eq('id', session.user.id);
+
+      if (updateError) {
+        console.error("Failed to update credits:", updateError);
+        setError("Image generated, but failed to update your credit balance.");
+      }
+
+      setCredits(newCredits);
     } catch (err) {
       setError('An error occurred during image generation. The workflow may have timed out or failed. Please check your inputs and try again.');
       console.error(err);
@@ -74,12 +120,17 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
       clearInterval(timer);
       setIsGenerating(false);
     }
-  }, [credits, session.user.email]);
+  }, [credits, session.user.id, session.user.email]);
   
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">
-      <Header credits={credits} />
+      <Header credits={credits ?? 0} />
       <main className="container mx-auto p-4 md:p-8">
+        {error && (
+            <div className="mb-6">
+                <ErrorMessage message={error} />
+            </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           <div className="flex flex-col space-y-6">
             <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-600">
@@ -93,10 +144,10 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
               onSubmit={handleGenerate}
               isGenerating={isGenerating}
               isLoadingModels={isLoadingModels}
+              isLoadingCredits={isLoadingCredits}
               credits={credits}
               userEmail={session.user.email}
             />
-            {error && <ErrorMessage message={error} />}
           </div>
           <ImageDisplay
             imageUrl={generatedImage}
@@ -105,9 +156,6 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
           />
         </div>
       </main>
-      <footer className="text-center p-4 mt-8 text-gray-500 text-sm">
-        <p>Powered by n8n and Stable Horde</p>
-      </footer>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { SparklesIcon } from '../components/icons/SparklesIcon';
 import { LockIcon } from '../components/icons/LockIcon';
@@ -18,6 +18,23 @@ export const AuthPage: React.FC = () => {
     const [authError, setAuthError] = useState<string | null>(null);
     const [showVerificationMessage, setShowVerificationMessage] = useState(false);
 
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const errorDescription = params.get('error_description');
+        
+        if (errorDescription) {
+          let friendlyMessage = errorDescription.replace(/\+/g, ' ');
+          
+          if (params.get('error_code') === 'otp_expired') {
+            friendlyMessage = "Your verification link has expired. Please try signing up again to receive a new link, or sign in if you've already verified your account.";
+          }
+          
+          setAuthError(friendlyMessage);
+          
+          window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+        }
+      }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setAuthError(null);
@@ -35,9 +52,9 @@ export const AuthPage: React.FC = () => {
                 const { data, error } = await supabase.auth.signUp({ email, password });
                 if (error) {
                     setAuthError(error.message);
-                } else if (data.user && data.user.identities && data.user.identities.length === 0) {
-                    setAuthError("User with this email already exists but is unconfirmed. Please check your email for the verification link.");
-                } else {
+                } else if (data.user) {
+                    // This handles both new signups and re-signups for unconfirmed users.
+                    // Supabase automatically sends/resends the verification email.
                     setShowVerificationMessage(true);
                 }
             } else {
@@ -130,7 +147,7 @@ export const AuthPage: React.FC = () => {
                             </div>
                             <div>
                                 <h4 className="font-bold text-lg text-white">Free Plan</h4>
-                                <p className="text-gray-400"><span className="font-semibold text-white">10 credits/day</span> (1 generation = 1 credit)</p>
+                                <p className="text-gray-400"><span className="font-semibold text-white">10,000 free credits</span> on sign-up</p>
                             </div>
                          </div>
                          {/* Pro Plan */}

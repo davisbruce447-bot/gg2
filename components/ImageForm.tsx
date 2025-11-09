@@ -1,13 +1,14 @@
-
 import React, { useState } from 'react';
 import type { StableHordeModel, FormData } from '../types';
+import { IMAGE_GENERATION_COST } from '../constants';
 
 interface ImageFormProps {
   models: StableHordeModel[];
   onSubmit: (formData: Omit<FormData, 'email'>) => void;
   isGenerating: boolean;
   isLoadingModels: boolean;
-  credits: number;
+  isLoadingCredits: boolean;
+  credits: number | null;
   userEmail: string | undefined;
 }
 
@@ -16,6 +17,7 @@ export const ImageForm: React.FC<ImageFormProps> = ({
   onSubmit,
   isGenerating,
   isLoadingModels,
+  isLoadingCredits,
   credits,
   userEmail,
 }) => {
@@ -28,7 +30,20 @@ export const ImageForm: React.FC<ImageFormProps> = ({
     onSubmit({ Prompt: prompt, Model: selectedModel });
   };
 
-  const isDisabled = isGenerating || isLoadingModels || credits <= 0;
+  const isDisabled = isGenerating || isLoadingModels || isLoadingCredits || credits === null || credits < IMAGE_GENERATION_COST;
+
+  const getButtonText = () => {
+    if (isGenerating) return 'Generating...';
+    if (isLoadingCredits) return 'Loading Credits...';
+
+    const cost = IMAGE_GENERATION_COST;
+    const creditText = cost === 1 ? 'Credit' : 'Credits';
+    if (credits !== null && credits >= cost) {
+      return `Generate Image (${cost} ${creditText})`;
+    }
+    
+    return 'Out of Credits';
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-gray-800/50 p-6 rounded-lg border border-gray-700">
@@ -82,11 +97,11 @@ export const ImageForm: React.FC<ImageFormProps> = ({
         disabled={isDisabled}
         className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-900 disabled:bg-indigo-900/50 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-300"
       >
-        {isGenerating ? 'Generating...' : (credits > 0 ? 'Generate Image' : 'Out of Credits')}
+        {getButtonText()}
       </button>
-       {credits <= 0 && !isGenerating && (
+       {credits !== null && credits < IMAGE_GENERATION_COST && !isGenerating && (
         <p className="text-center text-sm text-yellow-500 mt-4">
-          You've used all your free credits for today. Upgrade to Pro for unlimited generations!
+          You've used all your free credits. Upgrade to Pro for unlimited generations!
         </p>
       )}
     </form>
