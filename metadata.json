@@ -1,0 +1,5 @@
+{
+  "name": "Copy of DreamForge",
+  "description": "A frontend for an n8n workflow that uses Stable Horde to generate images from text prompts. The application allows users to enter a prompt, select a model, and receive a generated image.",
+  "requestFramePermissions": []
+}
