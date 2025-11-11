@@ -76,7 +76,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
         });
 
     } catch (err: any) {
-      setError(`Failed to update credits for user ${userId}. Check RLS policies.`);
+      const detailedMessage = `Failed to update credits for user. Check RLS policies. (Details: ${err.message})`;
+      setError(detailedMessage);
       console.error(err);
     } finally {
         setSaving(prev => ({ ...prev, [userId]: false }));
@@ -102,7 +103,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
             )
         );
     } catch (err: any) {
-        setError(`Failed to update pro status for user ${userId}.`);
+        const detailedMessage = `Failed to update pro status for user. Check RLS policies. (Details: ${err.message})`;
+        setError(detailedMessage);
         console.error(err);
     } finally {
         setTogglingPro(prev => ({ ...prev, [userId]: false }));

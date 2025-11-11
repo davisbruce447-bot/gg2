@@ -206,8 +206,9 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session, isAdmin, 
         .eq('id', session.user.id);
 
       if (updateError) {
+        const detailedMessage = `Image generated, but failed to update credit balance. Check RLS policies. (Details: ${updateError.message})`;
         console.error("Failed to update credits:", updateError);
-        setError("Image generated, but failed to update your credit balance.");
+        setError(detailedMessage);
       }
 
       setCredits(newCredits);

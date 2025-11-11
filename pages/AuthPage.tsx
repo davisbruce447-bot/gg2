@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { SparklesIcon } from '../components/icons/SparklesIcon';
@@ -34,6 +33,17 @@ export const AuthPage: React.FC = () => {
           window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
         }
       }, []);
+      
+    const handleAuthError = (error: Error) => {
+        console.error('Full authentication error:', error);
+        let message = error.message;
+        if (message.toLowerCase().includes('failed to fetch')) {
+            message = "Network error. Please check your internet connection and ensure ad-blockers are not interfering with requests to Supabase.";
+        } else if (message.includes('No API key found')) {
+            message = "Configuration Error: Supabase API Key is missing. Please verify the key in 'services/supabaseClient.ts' and check for interfering browser extensions (like ad-blockers).";
+        }
+        setAuthError(message);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,19 +61,18 @@ export const AuthPage: React.FC = () => {
             if (isSignUp) {
                 const { data, error } = await supabase.auth.signUp({ email, password });
                 if (error) {
-                    setAuthError(error.message);
+                    handleAuthError(error);
                 } else if (data.user) {
                     setShowVerificationMessage(true);
                 }
             } else {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) {
-                    setAuthError(error.message);
+                    handleAuthError(error);
                 }
             }
-        } catch (err) {
-            setAuthError("An unexpected error occurred. Please try again.");
-            console.error(err);
+        } catch (err: any) {
+            handleAuthError(err);
         } finally {
             setIsLoading(false);
         }
