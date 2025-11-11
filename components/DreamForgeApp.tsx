@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './Header';
 import { ImageForm } from './ImageForm';
@@ -12,9 +13,11 @@ import type { Session } from '@supabase/supabase-js';
 
 interface DreamForgeAppProps {
   session: Session;
+  isAdmin: boolean;
+  onAdminClick: () => void;
 }
 
-export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
+export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session, isAdmin, onAdminClick }) => {
   const [models, setModels] = useState<StableHordeModel[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState<boolean>(true);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -63,34 +66,70 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
   }, []);
 
   useEffect(() => {
-    const fetchUserCredits = async () => {
+    const fetchUserCreditsAndRewardDaily = async () => {
       if (!session.user) return;
       
       setIsLoadingCredits(true);
       setError(null);
 
       let attempts = 0;
-      const maxAttempts = 4; // Try up to 4 times (initial + 3 retries)
-      const delay = 1500; // 1.5 seconds delay
+      const maxAttempts = 4;
+      const delay = 1500;
 
       while (attempts < maxAttempts) {
         try {
-          const { data, error: fetchError } = await supabase
+          const { data: profile, error: fetchError } = await supabase
             .from('profiles')
-            .select('credits')
+            .select('credits, is_pro, last_credit_reward_at')
             .eq('id', session.user.id)
             .single();
+          
+          if (profile) {
+            let currentCredits = profile.credits;
+            const lastRewardDate = profile.last_credit_reward_at ? new Date(profile.last_credit_reward_at) : null;
+            const now = new Date();
+            
+            let needsCreditReward = false;
+            if (!lastRewardDate) {
+                // User has never received a reward, give them one.
+                needsCreditReward = true; 
+            } else {
+                // Check if the last reward was given on a previous calendar day.
+                const lastRewardDay = new Date(lastRewardDate.getFullYear(), lastRewardDate.getMonth(), lastRewardDate.getDate());
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                if (today.getTime() > lastRewardDay.getTime()) {
+                    needsCreditReward = true;
+                }
+            }
 
-          if (data) {
-            setCredits(data.credits);
+            if (needsCreditReward) {
+              const rewardAmount = profile.is_pro ? 100 : 5;
+              const newTotalCredits = currentCredits + rewardAmount;
+
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                  credits: newTotalCredits,
+                  last_credit_reward_at: now.toISOString() 
+                })
+                .eq('id', session.user.id);
+              
+              if (updateError) {
+                console.error("Failed to apply daily credit reward:", updateError);
+              } else {
+                currentCredits = newTotalCredits;
+              }
+            }
+            
+            setCredits(currentCredits);
             setIsLoadingCredits(false);
-            return; 
+            return; // Success, exit loop
           }
 
           if (fetchError && fetchError.code === 'PGRST116') {
             attempts++;
             if (attempts < maxAttempts) {
-              console.warn(`Profile not found, retrying in ${delay}ms... (Attempt ${attempts}/${maxAttempts})`);
+              console.warn(`Profile not found, retrying... (Attempt ${attempts}/${maxAttempts})`);
               await new Promise(resolve => setTimeout(resolve, delay));
             } else {
               throw new Error("Profile not found after multiple attempts.");
@@ -98,19 +137,19 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
           } else if (fetchError) {
              throw fetchError;
           } else {
-            throw new Error("Unexpected response from database when fetching credits.");
+            throw new Error("Unexpected response from database when fetching profile.");
           }
         } catch (err: any) {
-          console.error('Final error fetching credits:', err);
+          console.error('Final error fetching/updating credits:', err);
           setError("Could not load your credit balance. Please refresh the page and try again.");
           setCredits(0);
           setIsLoadingCredits(false);
-          return;
+          return; // Exit loop on final failure
         }
       }
     };
 
-    fetchUserCredits();
+    fetchUserCreditsAndRewardDaily();
   }, [session.user]);
 
   const handleGenerate = useCallback(async (formData: Omit<FormData, 'email'>) => {
@@ -188,7 +227,7 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session }) => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">
-      <Header credits={credits ?? 0} />
+      <Header credits={credits ?? 0} isAdmin={isAdmin} onAdminClick={onAdminClick} />
       <main className="container mx-auto p-4 md:p-8">
         {error && (
             <div className="mb-6">

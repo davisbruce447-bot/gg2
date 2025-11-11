@@ -141,7 +141,7 @@ export const AuthPage: React.FC = () => {
                             </div>
                             <div>
                                 <h4 className="font-bold text-lg text-white">Free Plan</h4>
-                                <p className="text-gray-400"><span className="font-semibold text-white">10 free credits</span> on sign-up</p>
+                                <p className="text-gray-400"><span className="font-semibold text-white">10 credits</span> on sign-up & <span className="font-semibold text-white">5 daily</span></p>
                             </div>
                          </div>
                          <div className="relative bg-gray-800 p-6 rounded-lg border border-indigo-500/50 ring-1 ring-indigo-500/50">
@@ -156,7 +156,7 @@ export const AuthPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-lg text-white">Pro Plan</h4>
-                                    <p className="text-gray-300">Unlimited generations for <span className="font-bold text-white">Rs 199 lifetime</span></p>
+                                    <p className="text-gray-300"><span className="font-bold text-white">100 credits daily</span> for a one-time payment of <span className="font-bold text-white">Rs 199</span></p>
                                 </div>
                             </div>
                             <button 

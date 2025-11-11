@@ -118,7 +118,7 @@ export const ImageForm: React.FC<ImageFormProps> = ({
       </button>
        {credits !== null && credits < IMAGE_GENERATION_COST && !isGenerating && (
         <p className="text-center text-sm text-yellow-500 mt-4">
-          You've used all your free credits. Upgrade to Pro for unlimited generations!
+          You're out of credits. Come back tomorrow for a daily refill or upgrade to Pro for more!
         </p>
       )}
     </form>
