@@ -27,7 +27,6 @@ export interface Profile {
   id: string;
   credits: number;
   email?: string;
-  last_sign_in_at?: string;
   role?: string;
   is_pro?: boolean;
   last_credit_reward_at?: string;

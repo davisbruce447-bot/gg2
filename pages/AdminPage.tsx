@@ -24,10 +24,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     const fetchProfiles = async () => {
       setLoading(true);
       setError(null);
+
       try {
         const { data, error: fetchError } = await supabase
           .from('profiles')
-          .select('id, credits, email, last_sign_in_at, role, is_pro');
+          .select('id, credits, email, last_credit_reward_at, role, is_pro');
 
         if (fetchError) throw fetchError;
         
@@ -164,7 +165,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Credits</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Plan</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Last Sign In</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Last Reward At</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Role</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -180,7 +181,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                            {profile.last_sign_in_at ? new Date(profile.last_sign_in_at).toLocaleString() : 'N/A'}
+                                            {profile.last_credit_reward_at ? new Date(profile.last_credit_reward_at).toLocaleString() : 'N/A'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${profile.role === 'admin' ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}`}>
