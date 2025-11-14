@@ -2,30 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DreamForge</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!--
-      REMOVED: The <script type="importmap"> was here.
-      It is not needed for a standard Vite build process, as Vite bundles all dependencies
-      (like React and Supabase) from your package.json into the final JavaScript file.
-      Leaving it in can cause conflicts with the production build.
-    -->
+  <script type="importmap">
+{
+  "imports": {
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.81.1",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.2",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+  }
+}
+</script>
 </head>
   <body class="bg-gray-900">
     <div id="root"></div>
-    <!--
-      IMPORTANT FOR DEPLOYMENT:
-      This HTML file is for development. To deploy this app to a static host like InfinityFree,
-      you MUST build it first. Run the following commands in your project folder:
-      1. npm install
-      2. npm run build
-      Then, upload the CONTENTS of the 'dist' folder (NOT the folder itself) to your server's
-      root directory (e.g., 'htdocs'). The build process will create a new, optimized index.html
-      in the 'dist' folder with the correct script tags for the compiled JavaScript.
-      The blank page on your live site is because servers cannot run ".tsx" files directly.
+    <!-- 
+      This <script> tag is for DEVELOPMENT ONLY.
+      The `npm run build` command will generate a new, optimized index.html
+      in the 'dist' folder that includes the correct, bundled JavaScript 
+      and CSS files for production. YOU MUST UPLOAD THE 'dist' FOLDER'S CONTENTS.
     -->
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
