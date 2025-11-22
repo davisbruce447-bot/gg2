@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import type { StableHordeModel, FormData } from '../types';
+import type { StableHordeModel, GenerationFormData } from '../types';
 import { IMAGE_GENERATION_COST } from '../constants';
 
 interface ImageFormProps {
   models: StableHordeModel[];
-  onSubmit: (formData: Omit<FormData, 'email'>) => void;
+  onSubmit: (formData: Omit<GenerationFormData, 'email'>) => void;
   isGenerating: boolean;
   isLoadingModels: boolean;
   isLoadingCredits: boolean;

@@ -9,7 +9,7 @@ export interface StableHordeModel {
   eta: number;
 }
 
-export interface FormData {
+export interface GenerationFormData {
   Prompt: string;
   email: string;
   Model: string;

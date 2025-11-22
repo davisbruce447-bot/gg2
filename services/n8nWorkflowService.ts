@@ -1,6 +1,6 @@
 
 import { N8N_WEBHOOK_URL, STABLE_HORDE_MODELS_URL } from '../constants';
-import type { StableHordeModel, FormData } from '../types';
+import type { StableHordeModel, GenerationFormData } from '../types';
 
 export const fetchModels = async (): Promise<StableHordeModel[]> => {
   const response = await fetch(STABLE_HORDE_MODELS_URL);
@@ -10,7 +10,7 @@ export const fetchModels = async (): Promise<StableHordeModel[]> => {
   return response.json();
 };
 
-export const generateImage = async (formData: FormData): Promise<Blob> => {
+export const generateImage = async (formData: GenerationFormData): Promise<Blob> => {
   if (N8N_WEBHOOK_URL.includes('changeme')) {
     throw new Error('Please update the N8N_WEBHOOK_URL in constants.ts before proceeding.');
   }

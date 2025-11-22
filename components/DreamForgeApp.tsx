@@ -8,7 +8,7 @@ import { fetchModels, generateImage } from '../services/n8nWorkflowService';
 import { supabase } from '../services/supabaseClient';
 import { IMAGE_GENERATION_COST } from '../constants';
 import { HistoryPanel } from './HistoryPanel';
-import type { StableHordeModel, FormData, HistoryItem } from '../types';
+import type { StableHordeModel, GenerationFormData, HistoryItem } from '../types';
 import type { Session } from '@supabase/supabase-js';
 
 interface DreamForgeAppProps {
@@ -152,7 +152,7 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session, isAdmin, 
     fetchUserCreditsAndRewardDaily();
   }, [session.user]);
 
-  const handleGenerate = useCallback(async (formData: Omit<FormData, 'email'>) => {
+  const handleGenerate = useCallback(async (formData: Omit<GenerationFormData, 'email'>) => {
     if (credits === null || credits < IMAGE_GENERATION_COST) {
       setError("You do not have enough credits to generate an image.");
       return;
@@ -169,7 +169,7 @@ export const DreamForgeApp: React.FC<DreamForgeAppProps> = ({ session, isAdmin, 
     }, 100);
 
     try {
-      const fullFormData: FormData = {
+      const fullFormData: GenerationFormData = {
         ...formData,
         email: session.user.email || '',
       };

@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // IMPORTANT: Replace with your project's URL and Anon Key
@@ -8,4 +9,10 @@ if (supabaseUrl.includes('YOUR_SUPABASE_PROJECT_URL') || supabaseAnonKey.include
   throw new Error("Supabase URL and Anon Key have not been set. Please update them in 'services/supabaseClient.ts'");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
